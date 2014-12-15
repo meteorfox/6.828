@@ -49,7 +49,7 @@ runcmd(struct cmd *cmd)
   struct pipecmd *pcmd;
   struct redircmd *rcmd;
 
-  if(cmd == 0)
+  if (cmd == 0)
     exit(0);
   
   switch(cmd->type){
@@ -59,10 +59,29 @@ runcmd(struct cmd *cmd)
 
   case ' ':
     ecmd = (struct execcmd*)cmd;
-    if(ecmd->argv[0] == 0)
+    if (ecmd->argv[0] == 0)
       exit(0);
-    fprintf(stderr, "exec not implemented\n");
-    // Your code here ...
+    int err = execv(ecmd->argv[0], ecmd->argv);
+    if (err == -1) {
+      // Try again but under /bin
+      char *path = "/bin/";
+      int n = strlen(ecmd->argv[0]);
+      int path_len = strlen(path);
+
+      char *c = malloc((n + path_len + 1) * sizeof(char));
+      assert(c);
+
+      strcpy(c, path);
+      strcat(c, ecmd->argv[0]);
+      ecmd->argv[0] = c;
+      err = execv(ecmd->argv[0], ecmd->argv);
+      if (err == -1) {
+	perror("ERROR");
+	exit(-1);
+      }
+
+      free(c);
+    }
     break;
 
   case '>':
@@ -328,6 +347,6 @@ parseexec(char **ps, char *es)
     }
     ret = parseredirs(ret, ps, es);
   }
-  cmd->argv[argc] = 0;
+  cmd->argv[argc] = 0; // NULL terminated arguments array.
   return ret;
 }
