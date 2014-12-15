@@ -61,26 +61,10 @@ runcmd(struct cmd *cmd)
     ecmd = (struct execcmd*)cmd;
     if (ecmd->argv[0] == 0)
       exit(0);
-    int err = execv(ecmd->argv[0], ecmd->argv);
-    if (err == -1) {
-      // Try again but under /bin
-      char *path = "/bin/";
-      int n = strlen(ecmd->argv[0]);
-      int path_len = strlen(path);
-
-      char *c = malloc((n + path_len + 1) * sizeof(char));
-      assert(c);
-
-      strcpy(c, path);
-      strcat(c, ecmd->argv[0]);
-      ecmd->argv[0] = c;
-      err = execv(ecmd->argv[0], ecmd->argv);
-      if (err == -1) {
-	perror("ERROR");
-	exit(-1);
-      }
-
-      free(c);
+   
+    if (execvp(ecmd->argv[0], ecmd->argv) < 0) {
+      perror(ecmd->argv[0]);
+      exit(-1);
     }
     break;
 
